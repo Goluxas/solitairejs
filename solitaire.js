@@ -19,10 +19,14 @@ var solitaire = (function() {
 	foundation_tmp = $foundation.find('#foundation-template').html();
 	tableau_tmp = $tableau.find('#tableau-template').html();
 
+	// Bind Events
+	$stock.click(draw);
+
 	function render() {
 		$stock.html( Mustache.render(stock_tmp, {stock_amount: stock.length}) );
 
-		$waste.html( Mustache.render(waste_tmp, {top_card: waste[waste.length-1]}) );
+		console.log(waste[waste.length-1]);
+		$waste.html( Mustache.render(waste_tmp, {top_card: toCard(waste[waste.length-1])}) );
 
 		// TODO
 		$foundation.html( Mustache.render(foundation_tmp, {}) );
@@ -46,6 +50,9 @@ var solitaire = (function() {
 
 	// converts an integer to a card string
 	function toCard(val) {
+		if ( val == undefined ) {
+			return '';
+		}
 		var suits = ['&spades;', '&clubs;', '&diams;', '&hearts;'];
 
 		var suit = suits[ Math.floor(val / 13) ];
@@ -102,6 +109,19 @@ var solitaire = (function() {
 
 		render();
 
+	}
+
+	// Draw from stock to waste
+	function draw() {
+		if (stock.length > 0) {
+			waste.push( stock.pop() );
+		}
+		else {
+			stock = waste.reverse();
+			waste = Array();
+		}
+
+		render();
 	}
 
 	deal();
