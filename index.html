@@ -1,0 +1,52 @@
+<html>
+<head>
+	<title>Solitaire</title>
+</head>
+
+<body>
+	<div id="solitaire">
+		<div id="stock">
+			<script id='stock-template' type='text/template'>
+				<h1>[{{stock_amount}}]</h1>
+			</script>
+		</div>
+		<div id="waste">
+			<script id='waste-template' type='text/template'>
+				<h1>{{top_card}}</h1>
+			</script>
+		</div>
+		<div id="foundation">
+			<script id='foundation-template' type='text/template'>
+				<ul>
+				{{#pile}}
+					<li>{{top_card}}</li>
+				{{/pile}}
+				</ul>
+			</script>
+		</div>
+		<div id="tableau">
+			<script id='tableau-template' type='text/template'>
+				<ul>
+				{{#piles}}
+					<li>
+						<ul>
+						{{#cards}}
+							<li>{{{card}}}</li>
+						{{/cards}}
+						</ul>
+					</li>
+				{{/piles}}
+				</ul>
+			</script>
+		</div>
+	</div>
+
+		<!-- Script imports at the end -->
+		<!-- Vendor scripts - eventually switch to hosted instead of CDN -->
+		<script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.2.1/mustache.min.js"></script>
+
+		<!-- Card Clicker scripts -->
+		<script src="solitaire.js"></script>
+</body>
+</html>
