@@ -28,7 +28,8 @@ var solitaire = (function() {
 	function render() {
 		$stock.html( Mustache.render(stock_tmp, {stock_amount: stock.length}) );
 
-		$waste.html( Mustache.render(waste_tmp, {top_card: toCard(waste[waste.length-1])}) );
+		var card = toCard(waste[waste.length-1]);
+		$waste.html( Mustache.render(waste_tmp, {top_card: card.string, color: card.color}) );
 
 		// TODO
 		$foundation.html( Mustache.render(foundation_tmp, {}) );
@@ -47,7 +48,8 @@ var solitaire = (function() {
 					tableau_torender[i].cards.push( {card: '--'} );
 				}
 				else {
-					tableau_torender[i].cards.push( {card: toCard(tableau[i][j])} );
+					var card = toCard(tableau[i][j]);
+					tableau_torender[i].cards.push( {card: card.string, color: card.color} );
 				}
 			}
 		}
@@ -78,7 +80,8 @@ var solitaire = (function() {
 			value += 1;
 		}
 
-		return value + ' ' + suit;
+		return {string: value + ' ' + suit,
+				color: Math.floor(val / 13) >= 2 ? 'red' : 'black' }
 	}
 
 	function deal() {

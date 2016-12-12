@@ -1,0 +1,35 @@
+.tableau-piles {
+	display: inline;
+	list-style-type: none;
+	margin: 0;
+	padding: 0p
+	float: left;
+}
+
+.tableau-piles > li {
+	float: left;
+	display: inline;
+	margin: 0 5px;
+	padding: 3px 2px;
+}
+
+.tableau-pile {
+	float: right;
+	list-style-type: none;
+}
+
+.tableau-pile > li {
+	text-align: center;
+}
+
+.stock, .card-waste {
+	font-size: 120%;
+}
+
+.card-red {
+	color: #cc0000;
+}
+
+.card-black {
+	color: #000000;
+}

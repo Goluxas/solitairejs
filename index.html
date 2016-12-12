@@ -1,19 +1,22 @@
 <html>
 <head>
 	<title>Solitaire</title>
+	<link rel="stylesheet" type="text/css" href="solitaire.css">
 </head>
 
 <body>
 	<div id="solitaire">
-		<div id="stock">
-			<script id='stock-template' type='text/template'>
-				<h1>[{{stock_amount}}]</h1>
-			</script>
-		</div>
-		<div id="waste">
-			<script id='waste-template' type='text/template'>
-				<h1 class="card-waste card-movable">{{{top_card}}}</h1>
-			</script>
+		<div id="draw-zone">
+			<span id="stock">
+				<script id='stock-template' type='text/template'>
+					<span class="stock">[{{stock_amount}}]</span>
+				</script>
+			</span>
+			<span id="waste">
+				<script id='waste-template' type='text/template'>
+					<span class="card-waste card-movable card-{{color}}">{{{top_card}}}</span>
+				</script>
+			</span>
 		</div>
 		<div id="foundation">
 			<script id='foundation-template' type='text/template'>
@@ -26,12 +29,12 @@
 		</div>
 		<div id="tableau">
 			<script id='tableau-template' type='text/template'>
-				<ul id="tableau-piles">
+				<ul id="tableau-piles" class="tableau-piles">
 				{{#piles}}
 					<li>
-						<ul>
+						<ul class="tableau-pile">
 						{{#cards}}
-							<li class="card-tableau card-movable">{{{card}}}</li>
+							<li class="card-tableau card-movable card-{{color}}">{{{card}}}</li>
 						{{/cards}}
 						</ul>
 					</li>
