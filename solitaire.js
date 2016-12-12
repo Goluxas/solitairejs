@@ -52,6 +52,11 @@ var solitaire = (function() {
 					tableau_torender[i].cards.push( {card: card.string, color: card.color} );
 				}
 			}
+			
+			// If the tableau pile is empty, display [ ]
+			if (tableau[i].length == 0) {
+				tableau_torender[i].cards.push( {card: '[ ]', color: 'black'} );
+			}
 		}
 
 		$tableau.html( Mustache.render(tableau_tmp, {piles: tableau_torender}) );
@@ -216,7 +221,8 @@ var solitaire = (function() {
 			}
 
 			// Basic Tableau rule: card must be 1 under and the opposite color to move
-			if (target.value - movee.value == 1 && movee.black != target.black) {
+			// OR you are moving a king onto an empty tableau
+			if ((target.value - movee.value == 1 && movee.black != target.black) || (movee.value == 12 && tableau[target_sel.pile].length == 0)) {
 				return true;
 			}
 		}
