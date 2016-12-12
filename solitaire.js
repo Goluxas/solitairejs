@@ -28,7 +28,6 @@ var solitaire = (function() {
 	function render() {
 		$stock.html( Mustache.render(stock_tmp, {stock_amount: stock.length}) );
 
-		console.log(waste[waste.length-1]);
 		$waste.html( Mustache.render(waste_tmp, {top_card: toCard(waste[waste.length-1])}) );
 
 		// TODO
@@ -149,10 +148,7 @@ var solitaire = (function() {
 
 		// If another card was previous selected, try to move it
 		if (selection) {
-			var movee = getCardValFromSelection(selection);
-			var target = getCardValFromSelection(new_selection);
-
-			if (isValidMove(movee, target)) {
+			if (isValidMove(selection, new_selection)) {
 				moveCard(selection, new_selection);
 			}
 			else {
@@ -166,43 +162,97 @@ var solitaire = (function() {
 		}
 	}
 
-	function getCardValFromSelection(sel) {
+	function getCardFromSelection(sel) {
 		if (sel.location == 'tableau') {
-			return tableau[sel.pile][sel.card];
+			raw_val = tableau[sel.pile][sel.card];
 		}
+
+		return { black : Math.floor(raw_val / 13) < 2,
+				 value: raw_val % 13 }
 	}
 
-	function isValidMove(movee, target) {
-		var movee = { black: Math.floor(movee / 13) < 2,
-					  value: movee % 13 }
-		var target = { black: Math.floor(target / 13) < 2,
-					   value: target % 13 }
+	function isValidMove(move_sel, target_sel) {
+		var movee = getCardFromSelection(move_sel);
+		var target = getCardFromSelection(target_sel);
 
-		console.log(movee);
-		console.log(target);
+		if (target_sel.location == 'waste') { 
+			return false;
+		}
+		else if (target_sel.location == 'tableau') {
+			// If the target to move to is not the bottom card of the tableau,
+			// assume they meant to click the bottom instead
+			target_sel.card = tableau[target_sel.pile].length - 1;
+			target = getCardFromSelection(target_sel);
 
-		if (target.value - movee.value == 1 && movee.black != target.black) {
-			return true;
+			if (move_sel.location == 'tableau') {
+
+				// If the moving card is not revealed, the move is illegal
+				if (move_sel.card < hidden_tableau[move_sel.pile]) {
+					console.log('Cannot move hidden card');
+					return false;
+				}
+
+				// If the moving card is not the bottom of its pile, check to see
+				// if the stack is movable as a whole
+				if (move_sel.card != tableau[move_sel.pile].length - 1) {
+					if (!checkStack(move_sel.pile, move_sel.card)) {
+						console.log('Illegal stack move')
+						return false;
+					}
+				}
+
+				if (target.value - movee.value == 1 && movee.black != target.black) {
+					return true;
+				}
+			}
 		}
 		else {
 			return false;
 		}
 	}
 
-	function moveCard(movee, target) {
-		var source_array = null;
-		if (movee.location == 'tableau') {
-			source_array = tableau[movee.pile];
+	function moveCard(move_sel, target_sel) {
+		var stack = Array();
+		if (move_sel.location == 'tableau') {
+			//
+			// Move all the cards up to the move_sel onto the stack
+			// (We already know the stack is valid to move.)
+			for ( var i=tableau[move_sel.pile].length - 1; i >= move_sel.card; i-- ) {
+				var card = tableau[move_sel.pile].pop();
+				stack.push(card);
+			}
 		}
 
 		var dest_array = null;
-		if (target.location == 'tableau') {
-			dest_array = tableau[target.pile];
+		if (target_sel.location == 'tableau') {
+			dest_array = tableau[target_sel.pile];
 		}
 
-		dest_array.push( source_array.pop() )
+		// If I use stack.length directly, it gets messed up by the
+		// changing length with pop()
+		var stack_count = stack.length;
+		for ( var i=0; i<stack_count; i++ ) {
+			var card = stack.pop();
+			dest_array.push(card);
+		}
 
 		render();
+	}
+
+	function checkStack(pile, stack_top) {
+		var prev_card = null;
+		for ( var i=tableau[pile]; i >= stack_top; i-- ) {
+			var new_card = getCardFromSelection({location: 'tableau', pile: pile, card: i});
+
+			// If the previous card is not 1 lower and an opposite color, the stack is invalid
+			if (prev_card && (new_card.value - prev_card.value != 1 || new_card.black == prev_card.black)) {
+				return false;
+			}
+			
+			prev_card = new_card;
+		}
+
+		return true;
 	}
 
 	deal();
