@@ -8,19 +8,22 @@ var solitaire = (function() {
 	var hidden_tableau = Array(7);
 
 	// Cache DOM
-	$sol = $("#solitaire");
-	$stock = $sol.find("#stock");
-	$waste = $sol.find("#waste");
-	$foundation = $sol.find("#foundation");
-	$tableau = $sol.find("#tableau");
+	var $sol = $("#solitaire");
+	var $stock = $sol.find("#stock");
+	var $waste = $sol.find("#waste");
+	var $foundation = $sol.find("#foundation");
+	var $tableau = $sol.find("#tableau");
 
-	stock_tmp = $stock.find('#stock-template').html();
-	waste_tmp = $waste.find('#waste-template').html();
-	foundation_tmp = $foundation.find('#foundation-template').html();
-	tableau_tmp = $tableau.find('#tableau-template').html();
+	var stock_tmp = $stock.find('#stock-template').html();
+	var waste_tmp = $waste.find('#waste-template').html();
+	var foundation_tmp = $foundation.find('#foundation-template').html();
+	var tableau_tmp = $tableau.find('#tableau-template').html();
+
+	var selection = null;
 
 	// Bind Events
 	$stock.click(draw);
+	$sol.delegate('.card-movable', 'click', selectCard);
 
 	function render() {
 		$stock.html( Mustache.render(stock_tmp, {stock_amount: stock.length}) );
@@ -35,6 +38,11 @@ var solitaire = (function() {
 		var tableau_torender = Array();
 		for (var i=0; i<tableau.length; i++) {
 			tableau_torender.push( {cards: Array()} );
+
+			if (hidden_tableau[i] >= tableau[i].length) {
+				hidden_tableau[i] = tableau[i].length - 1;
+			}
+
 			for (var j=0; j<tableau[i].length; j++) {
 				if (hidden_tableau[i] > j) {
 					tableau_torender[i].cards.push( {card: '--'} );
@@ -46,6 +54,8 @@ var solitaire = (function() {
 		}
 
 		$tableau.html( Mustache.render(tableau_tmp, {piles: tableau_torender}) );
+
+		$tableau = $sol.find("#tableau");
 	}
 
 	// converts an integer to a card string
@@ -120,6 +130,77 @@ var solitaire = (function() {
 			stock = waste.reverse();
 			waste = Array();
 		}
+
+		render();
+	}
+
+	function selectCard(evt) {
+		var $target = $(evt.target);
+
+		if ( $target.hasClass('card-tableau') ) {
+			var $tableaus_list = $tableau.find('#tableau-piles');
+			var $pile = $target.closest('ul');
+
+			var pile = $tableaus_list.children('li').index( $pile.closest('li') );
+			var card = $pile.find('li').index( $target );
+
+			var new_selection = {location: 'tableau', pile: pile, card: card};
+		}
+
+		// If another card was previous selected, try to move it
+		if (selection) {
+			var movee = getCardValFromSelection(selection);
+			var target = getCardValFromSelection(new_selection);
+
+			if (isValidMove(movee, target)) {
+				moveCard(selection, new_selection);
+			}
+			else {
+				console.log('Invalid Move');
+			}
+
+			selection = null;
+		}
+		else {
+			selection = new_selection;
+		}
+	}
+
+	function getCardValFromSelection(sel) {
+		if (sel.location == 'tableau') {
+			return tableau[sel.pile][sel.card];
+		}
+	}
+
+	function isValidMove(movee, target) {
+		var movee = { black: Math.floor(movee / 13) < 2,
+					  value: movee % 13 }
+		var target = { black: Math.floor(target / 13) < 2,
+					   value: target % 13 }
+
+		console.log(movee);
+		console.log(target);
+
+		if (target.value - movee.value == 1 && movee.black != target.black) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
+	function moveCard(movee, target) {
+		var source_array = null;
+		if (movee.location == 'tableau') {
+			source_array = tableau[movee.pile];
+		}
+
+		var dest_array = null;
+		if (target.location == 'tableau') {
+			dest_array = tableau[target.pile];
+		}
+
+		dest_array.push( source_array.pop() )
 
 		render();
 	}
