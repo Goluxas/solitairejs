@@ -136,6 +136,7 @@ var solitaire = (function() {
 	function selectCard(evt) {
 		var $target = $(evt.target);
 
+		var new_selection = null;
 		if ( $target.hasClass('card-tableau') ) {
 			var $tableaus_list = $tableau.find('#tableau-piles');
 			var $pile = $target.closest('ul');
@@ -143,7 +144,10 @@ var solitaire = (function() {
 			var pile = $tableaus_list.children('li').index( $pile.closest('li') );
 			var card = $pile.find('li').index( $target );
 
-			var new_selection = {location: 'tableau', pile: pile, card: card};
+			new_selection = {location: 'tableau', pile: pile, card: card};
+		}
+		else if ( $target.hasClass('card-waste') ) {
+			new_selection = {location: 'waste'};
 		}
 
 		// If another card was previous selected, try to move it
@@ -165,6 +169,9 @@ var solitaire = (function() {
 	function getCardFromSelection(sel) {
 		if (sel.location == 'tableau') {
 			raw_val = tableau[sel.pile][sel.card];
+		}
+		else if (sel.location == 'waste') {
+			raw_val = waste[waste.length-1];
 		}
 
 		return { black : Math.floor(raw_val / 13) < 2,
@@ -200,10 +207,14 @@ var solitaire = (function() {
 						return false;
 					}
 				}
+			}
+			else if (move_sel.location == 'waste') {
+				// no special rules
+			}
 
-				if (target.value - movee.value == 1 && movee.black != target.black) {
-					return true;
-				}
+			// Basic Tableau rule: card must be 1 under and the opposite color to move
+			if (target.value - movee.value == 1 && movee.black != target.black) {
+				return true;
 			}
 		}
 		else {
@@ -221,6 +232,10 @@ var solitaire = (function() {
 				var card = tableau[move_sel.pile].pop();
 				stack.push(card);
 			}
+		}
+		else if (move_sel.location == 'waste') {
+			var card = waste.pop();
+			stack.push(card);
 		}
 
 		var dest_array = null;
