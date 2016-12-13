@@ -321,6 +321,7 @@ var solitaire = (function() {
 			dest_array.push(card);
 		}
 
+		checkForWin();
 		render();
 	}
 
@@ -396,6 +397,20 @@ var solitaire = (function() {
 		}
 
 		return true;
+	}
+
+	function checkForWin() {
+		var win = true;
+		for (var i=0; i<foundation.length; i++) {
+			var card = getCardFromSelection( {location: 'foundation', pile: i} );
+			if (card.value != 12) {
+				win = false;
+			}
+		}
+
+		if (win) {
+			console.log('Congratulations! You win!');
+		}
 	}
 
 	deal();
