@@ -211,8 +211,6 @@ var solitaire = (function() {
 	}
 
 	function isValidMove(move_sel, target_sel) {
-		console.log(move_sel);
-		console.log(target_sel);
 		var movee = getCardFromSelection(move_sel);
 		var target = getCardFromSelection(target_sel);
 
@@ -258,9 +256,6 @@ var solitaire = (function() {
 				return false;
 			}
 
-			console.log(movee);
-			console.log(target);
-
 			// Basic Foundation rule: Can place onto foundation if the card matches suit and is one higher
 			// OR if you move an Ace to an empty pile
 			if ( (movee.value - target.value == 1 && movee.suit == target.suit) || (movee.value == 0 && foundation[target_sel.pile].length == 0) ) {
@@ -285,6 +280,10 @@ var solitaire = (function() {
 		}
 		else if (move_sel.location == 'waste') {
 			var card = waste.pop();
+			stack.push(card);
+		}
+		else if (move_sel.location == 'foundation') {
+			var card = foundation[move_sel.pile].pop();
 			stack.push(card);
 		}
 
