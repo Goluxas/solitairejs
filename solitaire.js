@@ -19,7 +19,7 @@ var solitaire = (function() {
 	var foundation_tmp = $foundation.find('#foundation-template').html();
 	var tableau_tmp = $tableau.find('#tableau-template').html();
 
-	var selection = null;
+	var selection = {location: 'none'};
 
 	// Bind Events
 	$stock.click(draw);
@@ -29,10 +29,15 @@ var solitaire = (function() {
 		$stock.html( Mustache.render(stock_tmp, {stock_amount: stock.length}) );
 
 		var card = toCard(waste[waste.length-1]);
-		$waste.html( Mustache.render(waste_tmp, {top_card: card.string, color: card.color}) );
+		var selected = '';
+		if (selection.location == 'waste') {
+			selected = 'card-selected';
+		}
+		$waste.html( Mustache.render(waste_tmp, {top_card: card.string, color: card.color, selected: selected}) );
 
 		var foundation_torender = Array();
 		for (var i=0; i<foundation.length; i++) {
+			var selected = '';
 			var card = null;
 			if (foundation[i].length > 0) {
 				card = toCard( foundation[i][foundation[i].length-1] );
@@ -40,7 +45,10 @@ var solitaire = (function() {
 			else {
 				card = {string: '[ ]', color: 'black'};
 			}
-			foundation_torender.push( {top_card: card.string, color: card.color} );
+			if (selection.location == 'foundation' && selection.pile == i) {
+				selected = 'card-selected';
+			}
+			foundation_torender.push( {top_card: card.string, color: card.color, selected: selected} );
 		}
 		$foundation.html( Mustache.render(foundation_tmp, {piles: foundation_torender}) );
 
@@ -54,12 +62,16 @@ var solitaire = (function() {
 			}
 
 			for (var j=0; j<tableau[i].length; j++) {
+				var selected = '';
 				if (hidden_tableau[i] > j) {
 					tableau_torender[i].cards.push( {card: '--'} );
 				}
 				else {
 					var card = toCard(tableau[i][j]);
-					tableau_torender[i].cards.push( {card: card.string, color: card.color} );
+					if (selection.location == 'tableau' && selection.pile == i && selection.card == j) {
+						selected = 'card-selected';
+					}
+					tableau_torender[i].cards.push( {card: card.string, color: card.color, selected: selected} );
 				}
 			}
 			
@@ -179,7 +191,7 @@ var solitaire = (function() {
 		}
 
 		// If another card was previous selected, try to move it
-		if (selection) {
+		if (selection.location != 'none') {
 			if (isValidMove(selection, new_selection)) {
 				moveCard(selection, new_selection);
 			}
@@ -187,11 +199,13 @@ var solitaire = (function() {
 				console.log('Invalid Move');
 			}
 
-			selection = null;
+			selection = {location: 'none'};
 		}
 		else {
 			selection = new_selection;
 		}
+
+		render();
 	}
 
 	function getCardFromSelection(sel) {

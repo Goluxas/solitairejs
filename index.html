@@ -14,7 +14,7 @@
 			</span>
 			<span id="waste">
 				<script id='waste-template' type='text/template'>
-					<span class="card-waste card-movable card-{{color}}">{{{top_card}}}</span>
+					<span class="card card-waste card-movable card-{{color}} {{selected}}">{{{top_card}}}</span>
 				</script>
 			</span>
 		</div>
@@ -22,7 +22,7 @@
 			<script id='foundation-template' type='text/template'>
 				<ul class="foundation">
 				{{#piles}}
-					<li class="card-foundation card-movable card-{{color}}">{{{top_card}}}</li>
+					<li class="card card-foundation card-movable card-{{color}} {{selected}}">{{{top_card}}}</li>
 				{{/piles}}
 				</ul>
 			</script>
@@ -34,7 +34,7 @@
 					<li>
 						<ul class="tableau-pile">
 						{{#cards}}
-							<li class="card-tableau card-movable card-{{color}}">{{{card}}}</li>
+							<li class="card card-tableau card-movable card-{{color}} {{selected}}">{{{card}}}</li>
 						{{/cards}}
 						</ul>
 					</li>

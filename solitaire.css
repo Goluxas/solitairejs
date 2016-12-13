@@ -37,7 +37,7 @@
 .foundation {
 	position: absolute;
 	top: .5em;
-	left: 28em;
+	left: 30em;
 	display: inline;
 	list-style-type: none;
 	margin: 0;
@@ -50,4 +50,13 @@
 	display: inline;
 	margin: 0 5px;
 	padding 3px 2px;
+}
+
+.card {
+	padding: 3px;
+}
+
+.card-selected {
+	border: 1px dashed red;
+	padding: 2px;
 }
