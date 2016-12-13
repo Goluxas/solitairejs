@@ -20,10 +20,10 @@
 		</div>
 		<div id="foundation">
 			<script id='foundation-template' type='text/template'>
-				<ul>
-				{{#pile}}
-					<li class="card-movable">{{top_card}}</li>
-				{{/pile}}
+				<ul class="foundation">
+				{{#piles}}
+					<li class="card-foundation card-movable card-{{color}}">{{{top_card}}}</li>
+				{{/piles}}
 				</ul>
 			</script>
 		</div>

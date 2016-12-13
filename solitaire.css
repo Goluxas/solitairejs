@@ -33,3 +33,21 @@
 .card-black {
 	color: #000000;
 }
+
+.foundation {
+	position: absolute;
+	top: .5em;
+	left: 28em;
+	display: inline;
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+	float: left;
+}
+
+.foundation li {
+	float: left;
+	display: inline;
+	margin: 0 5px;
+	padding 3px 2px;
+}

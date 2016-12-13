@@ -31,8 +31,18 @@ var solitaire = (function() {
 		var card = toCard(waste[waste.length-1]);
 		$waste.html( Mustache.render(waste_tmp, {top_card: card.string, color: card.color}) );
 
-		// TODO
-		$foundation.html( Mustache.render(foundation_tmp, {}) );
+		var foundation_torender = Array();
+		for (var i=0; i<foundation.length; i++) {
+			var card = null;
+			if (foundation[i].length > 0) {
+				card = toCard( foundation[i][foundation[i].length-1] );
+			}
+			else {
+				card = {string: '[ ]', color: 'black'};
+			}
+			foundation_torender.push( {top_card: card.string, color: card.color} );
+		}
+		$foundation.html( Mustache.render(foundation_tmp, {piles: foundation_torender}) );
 
 		//tableau_torender = {piles: cards: card}
 		var tableau_torender = Array();
@@ -121,8 +131,11 @@ var solitaire = (function() {
 		// place remaining cards in stock
 		stock = deck;
 
-		// initialize waste to empty array
+		// initialize waste and foundations to empty array
 		waste = Array();
+		for (var i=0; i<foundation.length; i++) {
+			foundation[i] = Array();
+		}
 
 		render();
 
@@ -157,6 +170,13 @@ var solitaire = (function() {
 		else if ( $target.hasClass('card-waste') ) {
 			new_selection = {location: 'waste'};
 		}
+		else if ( $target.hasClass('card-foundation') ) {
+			var $foundation_list = $foundation.find('ul');
+
+			var pile = $foundation_list.children('li').index( $target );
+
+			new_selection = {location: 'foundation', pile: pile};
+		}
 
 		// If another card was previous selected, try to move it
 		if (selection) {
@@ -181,12 +201,18 @@ var solitaire = (function() {
 		else if (sel.location == 'waste') {
 			raw_val = waste[waste.length-1];
 		}
+		else if (sel.location == 'foundation') {
+			raw_val = foundation[sel.pile][ foundation[sel.pile].length-1 ];
+		}
 
 		return { black : Math.floor(raw_val / 13) < 2,
-				 value: raw_val % 13 }
+				 value: raw_val % 13,
+				 suit: Math.floor(raw_val / 13) }
 	}
 
 	function isValidMove(move_sel, target_sel) {
+		console.log(move_sel);
+		console.log(target_sel);
 		var movee = getCardFromSelection(move_sel);
 		var target = getCardFromSelection(target_sel);
 
@@ -226,6 +252,21 @@ var solitaire = (function() {
 				return true;
 			}
 		}
+		else if ( target_sel.location == 'foundation' ) {
+			// Can't move a card that's under a stack
+			if (move_sel.location == 'tableau' && move_sel.card != tableau[move_sel.pile].length -1) {
+				return false;
+			}
+
+			console.log(movee);
+			console.log(target);
+
+			// Basic Foundation rule: Can place onto foundation if the card matches suit and is one higher
+			// OR if you move an Ace to an empty pile
+			if ( (movee.value - target.value == 1 && movee.suit == target.suit) || (movee.value == 0 && foundation[target_sel.pile].length == 0) ) {
+				return true;
+			}
+		}
 		else {
 			return false;
 		}
@@ -250,6 +291,9 @@ var solitaire = (function() {
 		var dest_array = null;
 		if (target_sel.location == 'tableau') {
 			dest_array = tableau[target_sel.pile];
+		}
+		else if (target_sel.location == 'foundation') {
+			dest_array = foundation[target_sel.pile];
 		}
 
 		// If I use stack.length directly, it gets messed up by the
