@@ -192,7 +192,11 @@ var solitaire = (function() {
 
 		// If another card was previous selected, try to move it
 		if (selection.location != 'none') {
-			if (isValidMove(selection, new_selection)) {
+			// If the same card is selected, attempt an auto-move
+			if (isSameSelection(selection, new_selection)) {
+				autoMove(selection);
+			}
+			else if (isValidMove(selection, new_selection)) {
 				moveCard(selection, new_selection);
 			}
 			else {
@@ -331,6 +335,64 @@ var solitaire = (function() {
 			}
 			
 			prev_card = new_card;
+		}
+
+		return true;
+	}
+
+	function autoMove(sel) {
+		var card = getCardFromSelection(sel);
+		var target = null;
+
+		// If it's under a stack, don't automove
+		if (sel.location == 'foundation' && sel.card != tableau[sel.pile].length - 1) {
+			console.log('Cannot AutoMove a stack');
+			return;
+		}
+
+		// If it's an Ace, move it to an empty foundation pile
+		if (card.value == 0) {
+			for (var i=0; i<foundation.length; i++) {
+				if (foundation[i].length == 0) {
+					target = {location: 'foundation', pile: i};
+					break;
+				}
+			}
+		}
+
+		// If it's not an Ace, see if there's a foundation it can buid on
+		else {
+			for (var i=0; i<foundation.length; i++) {
+				var this_pile = {location: 'foundation', pile: i};
+				var foundation_card = getCardFromSelection(this_pile);
+
+				if (foundation_card.suit == card.suit && card.value - foundation_card.value == 1) {
+					target = this_pile;
+					break;
+				}
+			}
+		}
+
+		if (target) {
+			// Move the card
+			moveCard(sel, target);
+		}
+		else {
+			console.log('No AutoMove found');
+		}
+	}
+
+	function isSameSelection(sel1, sel2) {
+		if (sel1.location != sel2.location) {
+			return false;
+		}
+
+		if (sel1.location == 'tableau' && (sel1.pile != sel2.pile || sel1.card != sel2.card)) {
+			return false;
+		}
+
+		if (sel1.location == 'foundation' && sel1.pile != sel2.pile) {
+			return false;
 		}
 
 		return true;
