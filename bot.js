@@ -82,6 +82,30 @@ var bot = (function() {
 					break; // home found, move to the next tableau card
 				}
 			}
+
+			// Check if the card can be moved onto another tableau
+			for (var i=0; i<active_cards.tableau.length; i++) {
+				var target = active_cards.tableau[i];
+
+				if (card.selection.pile == target.selection.pile && card.selection.card == target.selection.card) {
+					// that's this card, so skip it
+					continue;
+				}
+
+				// If the card is an empty spot and this card is a king
+				if (target.value == -1 && card.value == 12) {
+					moves.push( {movee: card,
+								 target: target,
+								 weight: 1} );
+				}
+
+				// If the card can be moved onto another
+				if (target.value - card.value == 1 && (card.color == 'red' && target.color == 'black' || card.color== 'black' && target.color == 'red')) { 
+					moves.push( {movee: card,
+								 target: target,
+								 weight: 1} );
+				}
+			}
 		});
 		
 		// Scan for moves with the waste card
@@ -123,10 +147,27 @@ var bot = (function() {
 		moves = moves.sort(sortMoves);
 
 		moves.forEach(function(move) {
-			console.log('Moving ' + cardToString(move.movee) + ' to ' + cardToString(move.target));
-			clickCard(move.movee.selection);
-			clickCard(move.target.selection);
+			// Check that the cards are still what is expected
+			var current_movee = toCard( move.movee.selection );
+			var current_target = toCard( move.target.selection );
+			if (sameCard(current_movee, move.movee) && sameCard(current_target, move.target)) {
+				console.log('Moving ' + cardToString(move.movee) + ' to ' + cardToString(move.target));
+				clickCard(move.movee.selection);
+				clickCard(move.target.selection);
+			}
+			else {
+				console.log('Skipping move, one or both cards already moved');
+			}
 		});
+	}
+
+	function sameCard(c1, c2) {
+		if (c1.value == c2.value && c1.suit == c2.suit) {
+			return true;
+		}
+		else {
+			return false;
+		}
 	}
 
 	function getCardElement(sel) {
