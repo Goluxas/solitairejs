@@ -12,6 +12,15 @@ var bot = (function() {
 	var $tableau_piles = $tableau.find('#tableau-piles').children('li').find('ul');
 	var $foundation_piles = $foundation.find('li');
 
+	var draw_new_card = false;
+	var no_move_streak = 0;
+
+	function autoPlay() {
+		while (no_move_streak < 50) {
+			findMoves();
+		}
+	}
+
 	function findActiveCards() {
 
 		cards = {foundation: Array(),
@@ -23,13 +32,12 @@ var bot = (function() {
 		$tableau_piles = $tableau.find('#tableau-piles').children('li').find('ul');
 		$foundation_piles = $foundation.find('li');
 
-		if ($waste.text() != '') {
-			var selection = {location: 'waste'};
-			var card = toCard(selection);
-			cards.waste = card;
-		}
+		// Waste
+		var selection = {location: 'waste'};
+		var card = toCard(selection);
+		cards.waste = card;
 
-
+		// Tableau
 		for (var i=0; i<$tableau_piles.length; i++) {
 			var selection = {location: 'tableau',
 							 pile: i,
@@ -38,6 +46,7 @@ var bot = (function() {
 			cards.tableau.push( card );
 		}
 
+		// Foundation
 		for (var i=0; i<$foundation_piles.length; i++) {
 			var selection = {location: 'foundation',
 							 pile: i};
@@ -45,34 +54,56 @@ var bot = (function() {
 			cards.foundation.push( card );
 		}
 
-		console.log(cards);
 		return cards;
 	}
 
 	function findMoves() {
 		// Make sure a waste card is available
-		if ($waste.find('.card-movable').text() == '') {
+		$waste = $sol.find("#waste").find('.card-movable');
+		if ($waste.text() == '' || draw_new_card) {
 			// Simulate a stock click
-			$stock.trigger('click');
+			clickCard({location: 'stock'});
+			draw_new_card = false;
 		}
 
 		active_cards = findActiveCards();
-
 
 		var moves = Array();
 		// Scan tableau for moves first
 		active_cards.tableau.forEach(function(card) {
 			// Check if the card is primed for playing on a foundation
-			active_cards.foundation.forEach(function(foundation_card) {
+			for (var i=0; i<active_cards.foundation.length; i++) {
+				var foundation_card = active_cards.foundation[i];
+
 				if (card.value - foundation_card.value == 1 && (card.suit == foundation_card.suit || foundation_card.suit == 'none')) {
 					moves.push( {movee: card,
 								 target: card,
 								 weight: 10 } );
+					break; // home found, move to the next tableau card
 				}
-			});
+			}
 		});
+		
+		// Scan for moves with the waste card
+		// Starting with foundation moves
+		for (var i=0; i<active_cards.foundation.length; i++) {
+			var foundation_card = active_cards.foundation[i];
+			// Also check the waste card while we're here
+			if (active_cards.waste.value - foundation_card.value == 1 && (active_cards.waste.suit == foundation_card.suit || foundation_card.suit == 'none')) {
+				moves.push( {movee: active_cards.waste,
+							 target: active_cards.waste,
+							 weight: 10 } );
+				break; // home found, waste settled
+			}
+		}
 
-		executeMoves(moves);
+		if (moves.length != 0) {
+			executeMoves(moves);
+		}
+		else {
+			draw_new_card = true;
+			no_move_streak += 1;
+		}
 	}
 
 	function executeMoves(moves) {
@@ -92,6 +123,7 @@ var bot = (function() {
 		moves = moves.sort(sortMoves);
 
 		moves.forEach(function(move) {
+			console.log('Moving ' + cardToString(move.movee) + ' to ' + cardToString(move.target));
 			clickCard(move.movee.selection);
 			clickCard(move.target.selection);
 		});
@@ -114,6 +146,9 @@ var bot = (function() {
 		else if (sel.location == 'foundation') {
 			target = $('#foundation').find('ul').children('li').eq(sel.pile);
 		}
+		else if (sel.location == 'stock') {
+			target = $('.stock')
+		}
 
 		return target;
 	}
@@ -122,14 +157,54 @@ var bot = (function() {
 		getCardElement(sel).trigger('click');
 	}
 
+	function cardToString(card) {
+		var str = '';
+		if (card.value == -1) {
+			str += 'Blank at ';
+
+			if (card.selection.location == 'foundation') {
+				str += 'Foundation Pile ' + card.selection.pile;
+			}
+			else if (card.selection.location == 'tableau') {
+				str += 'Tableau Pile ' + card.selection.pile + ' Card ' + card.selection.card;
+			}
+			else if (card.selection.location == 'waste') {
+				str += 'Waste';
+			}
+
+			return str;
+		}
+		else if (card.value == 0) {
+			str += 'A ';
+		}
+		else if (card.value == 10) {
+			str += 'J ';
+		}
+		else if (card.value == 11) {
+			str += 'Q ';
+		}
+		else if (card.value == 12) {
+			str += 'K ';
+		}
+		else {
+			str += card.value+1 + ' ';
+		}
+
+		str += String.fromCharCode(card.suit);
+		str += ' (' + card.selection.location + ')';
+
+		return str;
+	}
+
 	function toCard(sel) {
 		var $el = getCardElement(sel);
 		var card_string = $el.text();
 
-		if (card_string == '[ ]') {
+		if (card_string == '[ ]' || card_string == '') {
 			return { value: -1,
 					 color: 'none',
-					 suit: 'none' }
+					 suit: 'none',
+					 selection: sel }
 		}
 
 		var card = card_string.split(' ');
@@ -171,6 +246,7 @@ var bot = (function() {
 	   			 selection: sel }
 	}
 
-	return { findMoves: findMoves }
+	return { findMoves: findMoves,
+			 autoPlay: autoPlay }
 
 })();
