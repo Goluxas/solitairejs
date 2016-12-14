@@ -15,6 +15,9 @@ var bot = (function() {
 	var draw_new_card = false;
 	var no_move_streak = 0;
 
+	// surfaces stores the surface level index for each tableau pile
+	var surfaces = Array();
+
 	function autoPlay() {
 		no_move_streak = 0;
 		while (no_move_streak < 50) {
@@ -40,11 +43,16 @@ var bot = (function() {
 
 		// Tableau
 		for (var i=0; i<$tableau_piles.length; i++) {
-			var selection = {location: 'tableau',
-							 pile: i,
-							 card: $tableau_piles.eq(i).children('li').length - 1};
-			var card = toCard(selection);
-			cards.tableau.push( card );
+			var surface_index = $tableau_piles.eq(i).children('li').length-1;
+			surfaces[i] = surface_index;
+			for (var j=surface_index; j>=0; j--) {
+				var selection = {location: 'tableau',
+								 pile: i,
+								 card: j,
+				};
+				var card = toCard(selection);
+				cards.tableau.push( card );
+			}
 		}
 
 		// Foundation
@@ -71,22 +79,36 @@ var bot = (function() {
 
 		var moves = Array();
 		// Scan tableau for moves first
-		active_cards.tableau.forEach(function(card) {
-			// Check if the card is primed for playing on a foundation
-			for (var i=0; i<active_cards.foundation.length; i++) {
-				var foundation_card = active_cards.foundation[i];
+		for (var c=0; c<active_cards.tableau.length; c++) {
+			var card = active_cards.tableau[c];
 
-				if (card.value - foundation_card.value == 1 && (card.suit == foundation_card.suit || foundation_card.suit == 'none')) {
-					moves.push( {movee: card,
-								 target: card,
-								 weight: 10 } );
-					break; // home found, move to the next tableau card
+			// Skip hidden cards
+			if (c.value == -2) {
+				continue;
+			}
+
+			// Check if the card is primed for playing on a foundation
+			if (card.selection.card == surfaces[card.selection.pile]) { // Only surface cards can be moved
+				for (var i=0; i<active_cards.foundation.length; i++) {
+					var foundation_card = active_cards.foundation[i];
+
+					if (card.value - foundation_card.value == 1 && (card.suit == foundation_card.suit || foundation_card.suit == 'none')) {
+						moves.push( {movee: card,
+									 target: card,
+									 weight: 10 } );
+						break; // home found, move to the next tableau card
+					}
 				}
 			}
 
 			// Check if the card can be moved onto another tableau
 			for (var i=0; i<active_cards.tableau.length; i++) {
 				var target = active_cards.tableau[i];
+
+				// skip if the target is not a surface card
+				if (target.selection.card != surfaces[target.selection.pile]) {
+					continue;
+				}
 
 				if (card.selection.pile == target.selection.pile && card.selection.card == target.selection.card) {
 					// that's this card, so skip it
@@ -125,7 +147,7 @@ var bot = (function() {
 					moves.push( move );
 				}
 			}
-		});
+		}
 		
 		// Scan for moves with the waste card
 		// Starting with foundation moves
@@ -142,7 +164,13 @@ var bot = (function() {
 		}
 
 		// Now for moves onto the tableau
-		active_cards.tableau.forEach(function(target) {
+		for (var i=0; i<active_cards.tableau.length; i++) {
+			var target = active_cards.tableau[i];
+
+			if (target.value == -2 || target.selection.card != surfaces[target.selection.pile]) {
+				continue;
+			}
+
 			if (target.value - waste.value == 1 && (waste.color == 'red' && target.color == 'black' || waste.color== 'black' && target.color == 'red')) { 
 				var move = {movee: waste,
 							target: target,
@@ -150,7 +178,7 @@ var bot = (function() {
 				
 				moves.push( move );
 			}
-		});
+		}
 
 		if (moves.length != 0) {
 			executeMoves(moves);
