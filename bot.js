@@ -134,10 +134,10 @@ var bot = (function() {
 		// sort moves via priority and attempt them if still legal
 		function sortMoves(a, b) {
 			if (a.weight > b.weight) {
-				return 1;
+				return -1;
 			}
 			else if (a.weight < b.weight) {
-				return -1;
+				return 1;
 			}
 			else {
 				return 0;
@@ -145,6 +145,7 @@ var bot = (function() {
 		}
 
 		moves = moves.sort(sortMoves);
+		console.log(moves);
 
 		moves.forEach(function(move) {
 			// Check that the cards are still what is expected
@@ -156,7 +157,7 @@ var bot = (function() {
 				clickCard(move.target.selection);
 			}
 			else {
-				console.log('Skipping move, one or both cards already moved');
+				console.log('Skipping move, one or both cards already moved: (' + cardToString(move.movee) + ', ' + cardToString(move.target) + ')');
 			}
 		});
 	}
