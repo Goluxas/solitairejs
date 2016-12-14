@@ -346,7 +346,7 @@ var solitaire = (function() {
 		var target = null;
 
 		// If it's under a stack, don't automove
-		if (sel.location == 'foundation' && sel.card != tableau[sel.pile].length - 1) {
+		if (sel.location == 'tableau' && sel.card != tableau[sel.pile].length - 1) {
 			console.log('Cannot AutoMove a stack');
 			return;
 		}
