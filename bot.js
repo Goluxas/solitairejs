@@ -16,11 +16,17 @@ var bot = (function() {
 
 		cards = Array();
 
-		if ($waste.find('.card-movable').text() != '') {
+		// Refresh references
+		$waste = $sol.find("#waste").find('.card-movable');
+		$tableau_piles = $tableau.find('#tableau-piles').children('li').find('ul');
+		$foundation_piles = $foundation.find('li');
+
+		if ($waste.text() != '') {
 			var selection = {location: 'waste'};
 			var card = toCard(selection);
 			cards.push( card );
 		}
+
 
 		for (var i=0; i<$tableau_piles.length; i++) {
 			var selection = {location: 'tableau',
@@ -54,7 +60,7 @@ var bot = (function() {
 			var card = active_cards[i];
 			
 			// If the card is an Ace, move immediately to foundation
-			if (card.value == 0) {
+			if (card.value == 0 && card.selection.location != 'foundation') {
 				// Using the AutoMove of the base solitaire game
 				clickCard(card.selection);
 				clickCard(card.selection);
