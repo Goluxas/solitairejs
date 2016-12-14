@@ -56,16 +56,40 @@ var bot = (function() {
 
 		active_cards = findActiveCards();
 
-		for (var i=0; i<active_cards.length; i++) {
-			var card = active_cards[i];
-			
+		var moves = Array();
+
+		active_cards.forEach(function(card) {
 			// If the card is an Ace, move immediately to foundation
 			if (card.value == 0 && card.selection.location != 'foundation') {
-				// Using the AutoMove of the base solitaire game
-				clickCard(card.selection);
-				clickCard(card.selection);
+				moves.push( {movee: card,
+							 target: card,
+							 weight: 10 } );
+			}
+		});
+
+		executeMoves(moves);
+	}
+
+	function executeMoves(moves) {
+		// sort moves via priority and attempt them if still legal
+		function sortMoves(a, b) {
+			if (a.weight > b.weight) {
+				return 1;
+			}
+			else if (a.weight < b.weight) {
+				return -1;
+			}
+			else {
+				return 0;
 			}
 		}
+
+		moves = moves.sort(sortMoves);
+
+		moves.forEach(function(move) {
+			clickCard(move.movee.selection);
+			clickCard(move.target.selection);
+		});
 	}
 
 	function getCardElement(sel) {
