@@ -16,6 +16,7 @@ var bot = (function() {
 	var no_move_streak = 0;
 
 	function autoPlay() {
+		no_move_streak = 0;
 		while (no_move_streak < 50) {
 			findMoves();
 		}
@@ -92,8 +93,8 @@ var bot = (function() {
 					continue;
 				}
 
-				// If the card is an empty spot and this card is a king
-				if (target.value == -1 && card.value == 12) {
+				// If the card is an empty spot and this card is a king that is not already at the top of a pile
+				if (target.value == -1 && card.value == 12 && card.selection.card != 0) {
 					moves.push( {movee: card,
 								 target: target,
 								 weight: 1} );
@@ -101,25 +102,55 @@ var bot = (function() {
 
 				// If the card can be moved onto another
 				if (target.value - card.value == 1 && (card.color == 'red' && target.color == 'black' || card.color== 'black' && target.color == 'red')) { 
-					moves.push( {movee: card,
-								 target: target,
-								 weight: 1} );
+					var move = {movee: card,
+								target: target,
+								weight: 2 }; // starting weight = 2 because it's better than moving a waste card
+
+					// Check the parent card for strategic information
+					if (card.selection.card != 0) {
+						var parentCard_sel = {location: 'tableau',
+											  pile: card.selection.pile,
+											  card: card.selection.card - 1,
+						};
+						var parentCard = toCard( parentCard_sel );
+
+						if (parentCard.color == target.color) {
+							continue; // basically would move to mirror position; no benefit
+						}
+						// If the parent is hidden, raise the weight for this move
+						if (parentCard.value == -2) {
+							move.weight += 5;
+						}
+					}
+					moves.push( move );
 				}
 			}
 		});
 		
 		// Scan for moves with the waste card
 		// Starting with foundation moves
+		var waste = active_cards.waste;
 		for (var i=0; i<active_cards.foundation.length; i++) {
 			var foundation_card = active_cards.foundation[i];
 			// Also check the waste card while we're here
-			if (active_cards.waste.value - foundation_card.value == 1 && (active_cards.waste.suit == foundation_card.suit || foundation_card.suit == 'none')) {
-				moves.push( {movee: active_cards.waste,
-							 target: active_cards.waste,
+			if (waste.value - foundation_card.value == 1 && (waste.suit == foundation_card.suit || foundation_card.suit == 'none')) {
+				moves.push( {movee: waste,
+							 target: waste,
 							 weight: 10 } );
 				break; // home found, waste settled
 			}
 		}
+
+		// Now for moves onto the tableau
+		active_cards.tableau.forEach(function(target) {
+			if (target.value - waste.value == 1 && (waste.color == 'red' && target.color == 'black' || waste.color== 'black' && target.color == 'red')) { 
+				var move = {movee: waste,
+							target: target,
+							weight: 1 }; // starting weight = 1 because waste moves are low priority
+				
+				moves.push( move );
+			}
+		});
 
 		if (moves.length != 0) {
 			executeMoves(moves);
@@ -242,8 +273,17 @@ var bot = (function() {
 		var $el = getCardElement(sel);
 		var card_string = $el.text();
 
+		// empty spot
 		if (card_string == '[ ]' || card_string == '') {
 			return { value: -1,
+					 color: 'none',
+					 suit: 'none',
+					 selection: sel }
+		}
+
+		// hidden card
+		if (card_string == '--') {
+			return { value: -2,
 					 color: 'none',
 					 suit: 'none',
 					 selection: sel }
