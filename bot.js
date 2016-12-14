@@ -14,7 +14,9 @@ var bot = (function() {
 
 	function findActiveCards() {
 
-		cards = Array();
+		cards = {foundation: Array(),
+				 tableau: Array(),
+				 waste: null };
 
 		// Refresh references
 		$waste = $sol.find("#waste").find('.card-movable');
@@ -24,7 +26,7 @@ var bot = (function() {
 		if ($waste.text() != '') {
 			var selection = {location: 'waste'};
 			var card = toCard(selection);
-			cards.push( card );
+			cards.waste = card;
 		}
 
 
@@ -33,14 +35,14 @@ var bot = (function() {
 							 pile: i,
 							 card: $tableau_piles.eq(i).children('li').length - 1};
 			var card = toCard(selection);
-			cards.push( card );
+			cards.tableau.push( card );
 		}
 
 		for (var i=0; i<$foundation_piles.length; i++) {
 			var selection = {location: 'foundation',
 							 pile: i};
 			var card = toCard(selection);
-			cards.push( card );
+			cards.foundation.push( card );
 		}
 
 		console.log(cards);
@@ -56,15 +58,18 @@ var bot = (function() {
 
 		active_cards = findActiveCards();
 
-		var moves = Array();
 
-		active_cards.forEach(function(card) {
-			// If the card is an Ace, move immediately to foundation
-			if (card.value == 0 && card.selection.location != 'foundation') {
-				moves.push( {movee: card,
-							 target: card,
-							 weight: 10 } );
-			}
+		var moves = Array();
+		// Scan tableau for moves first
+		active_cards.tableau.forEach(function(card) {
+			// Check if the card is primed for playing on a foundation
+			active_cards.foundation.forEach(function(foundation_card) {
+				if (card.value - foundation_card.value == 1 && (card.suit == foundation_card.suit || foundation_card.suit == 'none')) {
+					moves.push( {movee: card,
+								 target: card,
+								 weight: 10 } );
+				}
+			});
 		});
 
 		executeMoves(moves);
