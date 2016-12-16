@@ -18,6 +18,11 @@ var bot = (function() {
 	// surfaces stores the surface level index for each tableau pile
 	var surfaces = Array();
 
+	function testRuns() {
+		// TODO
+		// run autoPlay 100x and see how many end in victory state
+	}
+
 	function autoPlay() {
 		no_move_streak = 0;
 		while (no_move_streak < 50) {
@@ -29,7 +34,9 @@ var bot = (function() {
 
 		cards = {foundation: Array(),
 				 tableau: Array(),
-				 waste: null };
+				 waste: null,
+				 priority: Array(),
+		};
 
 		// Refresh references
 		$waste = $sol.find("#waste").find('.card-movable');
@@ -45,6 +52,7 @@ var bot = (function() {
 		for (var i=0; i<$tableau_piles.length; i++) {
 			var surface_index = $tableau_piles.eq(i).children('li').length-1;
 			surfaces[i] = surface_index;
+			var first_hidden_found = false;
 			for (var j=surface_index; j>=0; j--) {
 				var selection = {location: 'tableau',
 								 pile: i,
@@ -52,6 +60,16 @@ var bot = (function() {
 				};
 				var card = toCard(selection);
 				cards.tableau.push( card );
+
+				// Set the top revealed card from each tableau as a movement priority
+				if (card.value == -2 && !first_hidden_found) {
+					var priority_card = toCard( {location: 'tableau',
+												 pile: i,
+												 card: j+1,
+					});
+					cards.priority.push( priority_card );
+					first_hidden_found = true;
+				}
 			}
 		}
 
@@ -82,9 +100,24 @@ var bot = (function() {
 		for (var c=0; c<active_cards.tableau.length; c++) {
 			var card = active_cards.tableau[c];
 
+			var move = {movee: card,
+						target: null,
+						weight: 0,
+			};
+
 			// Skip hidden cards
 			if (c.value == -2) {
 				continue;
+			}
+
+			// If this card is a priority card, raise the move weight
+			for (var i=0; i<active_cards.priority.length; i++) {
+				var pcard = active_cards.priority[i];
+
+				if (sameCard(card, pcard)) {
+					move.weight += 5;
+					break;
+				}
 			}
 
 			// Check if the card is primed for playing on a foundation
@@ -93,9 +126,9 @@ var bot = (function() {
 					var foundation_card = active_cards.foundation[i];
 
 					if (card.value - foundation_card.value == 1 && (card.suit == foundation_card.suit || foundation_card.suit == 'none')) {
-						moves.push( {movee: card,
-									 target: card,
-									 weight: 10 } );
+						move.target = card;
+						move.weight = 10;
+						moves.push( move );
 						break; // home found, move to the next tableau card
 					}
 				}
@@ -117,16 +150,15 @@ var bot = (function() {
 
 				// If the card is an empty spot and this card is a king that is not already at the top of a pile
 				if (target.value == -1 && card.value == 12 && card.selection.card != 0) {
-					moves.push( {movee: card,
-								 target: target,
-								 weight: 1} );
+					move.target = target;
+					move.weight = 1;
+					moves.push( move );
 				}
 
 				// If the card can be moved onto another
 				if (target.value - card.value == 1 && (card.color == 'red' && target.color == 'black' || card.color== 'black' && target.color == 'red')) { 
-					var move = {movee: card,
-								target: target,
-								weight: 2 }; // starting weight = 2 because it's better than moving a waste card
+					move.target = target;
+					move.weight = 2; // starting weight = 2 because it's better than moving a waste card
 
 					// Check the parent card for strategic information
 					if (card.selection.card != 0) {
@@ -141,7 +173,7 @@ var bot = (function() {
 						}
 						// If the parent is hidden, raise the weight for this move
 						if (parentCard.value == -2) {
-							move.weight += 5;
+							move.weight += 10;
 						}
 					}
 					moves.push( move );
