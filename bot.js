@@ -167,10 +167,20 @@ var bot = (function() {
 		for (var i=0; i<active_cards.tableau.length; i++) {
 			var target = active_cards.tableau[i];
 
+			// Skip trying to move onto hidden cards and non-surface cards
 			if (target.value == -2 || target.selection.card != surfaces[target.selection.pile]) {
 				continue;
 			}
 
+			// Kings onto blanks
+			if (target.value == -1 && waste.value == 12) {
+				var move = {movee: waste,
+							target: target,
+							weight: 1};
+				moves.push( move );
+			}
+
+			// Anything onto normal tableau
 			if (target.value - waste.value == 1 && (waste.color == 'red' && target.color == 'black' || waste.color== 'black' && target.color == 'red')) { 
 				var move = {movee: waste,
 							target: target,
