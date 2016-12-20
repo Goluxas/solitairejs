@@ -19,11 +19,15 @@ var bot = (function() {
 	// surfaces stores the surface level index for each tableau pile
 	var surfaces = Array();
 
-	function testRuns() {
+	function testRuns(runs) {
 		// run autoPlay 100x and see how many end in victory state
 		solved = 0;
 		played = 0;
-		for (var i=0; i<100; i++) {
+		if (!runs) {
+			runs = 100;
+		}
+
+		for (var i=0; i<runs; i++) {
 			redeal();
 			autoPlay();
 			if (checkWin()) {
