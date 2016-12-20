@@ -1,7 +1,5 @@
 var solitaire = (function() {
 
-	var deck = Array(52);
-
 	var stock, waste = null;
 	var foundation = Array(4);
 	var tableau = Array(7);
@@ -114,6 +112,7 @@ var solitaire = (function() {
 	function deal() {
 		
 		// fill deck
+		var deck = Array(52);
 		for (i=0; i<deck.length; i++) {
 			deck[i] = i;
 		}
@@ -414,5 +413,7 @@ var solitaire = (function() {
 	}
 
 	deal();
+
+	return {deal: deal};
 
 })();
