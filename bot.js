@@ -43,6 +43,8 @@ var bot = (function() {
 	}
 
 	function redeal() {
+		waste = Array();
+		waste_index = 0;
 		solitaire.deal();
 	}
 
@@ -234,6 +236,7 @@ var bot = (function() {
 		
 		// Scan for moves with the waste cards
 		// Starting with foundation moves
+		console.log(waste);
 		for (var w=0; w<waste.length; w++) {
 			card = waste[w];
 			
@@ -533,6 +536,7 @@ var bot = (function() {
 	return { findMoves: findMoves,
 			 autoPlay: autoPlay,
 			 testRuns: testRuns,
+			 redeal: redeal,
 	};
 
 })();
