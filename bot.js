@@ -14,20 +14,48 @@ var bot = (function() {
 
 	var draw_new_card = false;
 	var no_move_streak = 0;
+	var solved, played = 0;
 
 	// surfaces stores the surface level index for each tableau pile
 	var surfaces = Array();
 
 	function testRuns() {
-		// TODO
 		// run autoPlay 100x and see how many end in victory state
+		solved = 0;
+		played = 0;
+		for (var i=0; i<100; i++) {
+			redeal();
+			autoPlay();
+			if (checkWin()) {
+				solved += 1;
+			}
+			played += 1;
+		}
+		console.log('Solved ' + solved/played*100 + '% of games. (' + solved + '/' + played + ')');
 	}
 
-	function autoPlay() {
+	function redeal() {
+		solitaire.deal();
+	}
+
+	function autoPlay(speed) {
 		no_move_streak = 0;
 		while (no_move_streak < 50) {
 			findMoves();
 		}
+	}
+
+	function checkWin() {
+		cards = findActiveCards();
+
+		won = true;
+		cards.foundation.forEach(function(card) {
+			if (card.value != 12) {
+				won = false;
+			}
+		});
+		
+		return won;
 	}
 
 	function findActiveCards() {
@@ -100,10 +128,7 @@ var bot = (function() {
 		for (var c=0; c<active_cards.tableau.length; c++) {
 			var card = active_cards.tableau[c];
 
-			var move = {movee: card,
-						target: null,
-						weight: 0,
-			};
+			var weight = 0;
 
 			// Skip hidden cards
 			if (c.value == -2) {
@@ -115,7 +140,7 @@ var bot = (function() {
 				var pcard = active_cards.priority[i];
 
 				if (sameCard(card, pcard)) {
-					move.weight += 5;
+					weight += 5;
 					break;
 				}
 			}
@@ -126,8 +151,10 @@ var bot = (function() {
 					var foundation_card = active_cards.foundation[i];
 
 					if (card.value - foundation_card.value == 1 && (card.suit == foundation_card.suit || foundation_card.suit == 'none')) {
-						move.target = card;
-						move.weight = 10;
+						var move = {movee: card,
+									target: foundation_card,
+									weight: 10,
+						};
 						moves.push( move );
 						break; // home found, move to the next tableau card
 					}
@@ -150,15 +177,20 @@ var bot = (function() {
 
 				// If the card is an empty spot and this card is a king that is not already at the top of a pile
 				if (target.value == -1 && card.value == 12 && card.selection.card != 0) {
-					move.target = target;
-					move.weight = 1;
+					var move = {movee: card,
+								target: target,
+								weight: 1,
+					};
 					moves.push( move );
 				}
 
 				// If the card can be moved onto another
 				if (target.value - card.value == 1 && (card.color == 'red' && target.color == 'black' || card.color== 'black' && target.color == 'red')) { 
-					move.target = target;
-					move.weight = 2; // starting weight = 2 because it's better than moving a waste card
+					// starting weight = 2 because it's better than moving a waste card
+					var move = {movee: card,
+								target: target,
+								weight: 2,
+					};
 
 					// Check the parent card for strategic information
 					if (card.selection.card != 0) {
@@ -188,9 +220,11 @@ var bot = (function() {
 			var foundation_card = active_cards.foundation[i];
 			// Also check the waste card while we're here
 			if (waste.value - foundation_card.value == 1 && (waste.suit == foundation_card.suit || foundation_card.suit == 'none')) {
-				moves.push( {movee: waste,
+				var move =  {movee: waste,
 							 target: waste,
-							 weight: 10 } );
+							 weight: 10,
+				};
+				moves.push(move);
 				break; // home found, waste settled
 			}
 		}
@@ -208,7 +242,8 @@ var bot = (function() {
 			if (target.value == -1 && waste.value == 12) {
 				var move = {movee: waste,
 							target: target,
-							weight: 1};
+							weight: 1,
+				};
 				moves.push( move );
 			}
 
@@ -216,7 +251,8 @@ var bot = (function() {
 			if (target.value - waste.value == 1 && (waste.color == 'red' && target.color == 'black' || waste.color== 'black' && target.color == 'red')) { 
 				var move = {movee: waste,
 							target: target,
-							weight: 1 }; // starting weight = 1 because waste moves are low priority
+							weight: 1,
+				}; // starting weight = 1 because waste moves are low priority
 				
 				moves.push( move );
 			}
@@ -399,6 +435,8 @@ var bot = (function() {
 	}
 
 	return { findMoves: findMoves,
-			 autoPlay: autoPlay }
+			 autoPlay: autoPlay,
+			 testRuns: testRuns,
+	};
 
 })();
