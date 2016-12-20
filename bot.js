@@ -19,6 +19,10 @@ var bot = (function() {
 	// surfaces stores the surface level index for each tableau pile
 	var surfaces = Array();
 
+	// stores the entire waste pile and current revealed card index
+	var waste = Array();
+	var waste_index = 0;
+
 	function testRuns(runs) {
 		// run autoPlay 100x and see how many end in victory state
 		solved = 0;
@@ -42,7 +46,7 @@ var bot = (function() {
 		solitaire.deal();
 	}
 
-	function autoPlay(speed) {
+	function autoPlay() {
 		no_move_streak = 0;
 		while (no_move_streak < 50) {
 			findMoves();
@@ -62,23 +66,38 @@ var bot = (function() {
 		return won;
 	}
 
+	function getWaste() {
+		var stack = Array();
+		var index = 0;
+
+		$waste = $sol.find("#waste").find('.card-movable');
+		if ($waste.text() == '') {
+			stack.push('');
+		}
+
+		clickCard({location:'stock'});
+		$waste = $sol.find("#waste").find('.card-movable');
+		while ($waste.text() != '') { 
+			index++;
+			stack.push( toCard( {location: 'waste', index: index} ) );
+			clickCard({location:'stock'});
+			$waste = $sol.find("#waste").find('.card-movable');
+		}
+
+		return stack;
+
+	}
+
 	function findActiveCards() {
 
 		cards = {foundation: Array(),
 				 tableau: Array(),
-				 waste: null,
 				 priority: Array(),
 		};
 
 		// Refresh references
-		$waste = $sol.find("#waste").find('.card-movable');
 		$tableau_piles = $tableau.find('#tableau-piles').children('li').find('ul');
 		$foundation_piles = $foundation.find('li');
-
-		// Waste
-		var selection = {location: 'waste'};
-		var card = toCard(selection);
-		cards.waste = card;
 
 		// Tableau
 		for (var i=0; i<$tableau_piles.length; i++) {
@@ -118,13 +137,9 @@ var bot = (function() {
 
 	function findMoves() {
 		// Make sure a waste card is available
-		$waste = $sol.find("#waste").find('.card-movable');
-		if ($waste.text() == '' || draw_new_card) {
-			// Simulate a stock click
-			clickCard({location: 'stock'});
-			draw_new_card = false;
+		if (waste.length == 0) {
+			waste = getWaste();
 		}
-
 		active_cards = findActiveCards();
 
 		var moves = Array();
@@ -217,60 +232,129 @@ var bot = (function() {
 			}
 		}
 		
-		// Scan for moves with the waste card
+		// Scan for moves with the waste cards
 		// Starting with foundation moves
-		var waste = active_cards.waste;
-		for (var i=0; i<active_cards.foundation.length; i++) {
-			var foundation_card = active_cards.foundation[i];
-			// Also check the waste card while we're here
-			if (waste.value - foundation_card.value == 1 && (waste.suit == foundation_card.suit || foundation_card.suit == 'none')) {
-				var move =  {movee: waste,
-							 target: waste,
-							 weight: 10,
-				};
-				moves.push(move);
-				break; // home found, waste settled
-			}
-		}
-
-		// Now for moves onto the tableau
-		for (var i=0; i<active_cards.tableau.length; i++) {
-			var target = active_cards.tableau[i];
-
-			// Skip trying to move onto hidden cards and non-surface cards
-			if (target.value == -2 || target.selection.card != surfaces[target.selection.pile]) {
+		for (var w=0; w<waste.length; w++) {
+			card = waste[w];
+			
+			// Skip the null card
+			if (card == '') {
 				continue;
 			}
 
-			// Kings onto blanks
-			if (target.value == -1 && waste.value == 12) {
-				var move = {movee: waste,
-							target: target,
-							weight: 1,
-				};
-				moves.push( move );
+			for (var i=0; i<active_cards.foundation.length; i++) {
+				var foundation_card = active_cards.foundation[i];
+
+				if (card.value - foundation_card.value == 1 && (card.suit == foundation_card.suit || foundation_card.suit == 'none')) {
+					var move =  {movee: card,
+								 target: card,
+								 weight: 10,
+					};
+					moves.push(move);
+					break; // home found, waste settled
+				}
 			}
 
-			// Anything onto normal tableau
-			if (target.value - waste.value == 1 && (waste.color == 'red' && target.color == 'black' || waste.color== 'black' && target.color == 'red')) { 
-				var move = {movee: waste,
-							target: target,
-							weight: 1,
-				}; // starting weight = 1 because waste moves are low priority
-				
-				moves.push( move );
+			// Now for moves onto the tableau
+			for (var i=0; i<active_cards.tableau.length; i++) {
+				var target = active_cards.tableau[i];
+
+				// Skip trying to move onto hidden cards and non-surface cards
+				if (target.value == -2 || target.selection.card != surfaces[target.selection.pile]) {
+					continue;
+				}
+
+				// Kings onto blanks
+				if (target.value == -1 && card.value == 12) {
+					var move = {movee: card,
+								target: target,
+								weight: 1,
+					};
+					moves.push( move );
+				}
+
+				// Anything onto normal tableau
+				if (target.value - card.value == 1 && (card.color == 'red' && target.color == 'black' || card.color== 'black' && target.color == 'red')) { 
+					var move = {movee: card,
+								target: target,
+								weight: 1,
+					}; // starting weight = 1 because waste moves are low priority
+					
+					moves.push( move );
+				}
 			}
 		}
 
 		if (moves.length != 0) {
-			executeMoves(moves);
+			//executeMoves(moves);
+			console.log(moves);
+			executeMove(moves);
 		}
 		else {
-			draw_new_card = true;
 			no_move_streak += 1;
 		}
 	}
 
+	// Makes the waste card at index clickable
+	function activateWasteIndex(index) {
+		if (index < waste_index) {
+			$waste = $sol.find("#waste").find('.card-movable');
+			while ($waste.text() != '') {
+				clickCard( {location: 'stock'} );
+				$waste = $sol.find("#waste").find('.card-movable');
+			}
+			waste_index = 0;
+		}
+		
+		for (var i=waste_index; i<move.movee.selection.index; i++) {
+			clickCard( {location: 'stock'} );
+			waste_index++;
+		}
+	}
+
+	// Executes only the highest-weighted move
+	function executeMove(moves) {
+		function sortMoves(a, b) {
+			if (a.weight > b.weight) {
+				return -1;
+			}
+			else if (a.weight < b.weight) {
+				return 1;
+			}
+			else {
+				return 0;
+			}
+		}
+
+		moves = moves.sort(sortMoves);
+		move = moves[0];
+
+		// If it's a waste card, click through to it
+		if (move.movee.selection.location == 'waste') {
+			activateWasteIndex(move.movee.selection.index);
+		}
+
+		// Check that the cards are still what is expected
+		var current_movee = toCard( move.movee.selection );
+		var current_target = toCard( move.target.selection );
+		if (sameCard(current_movee, move.movee) && sameCard(current_target, move.target)) {
+			console.log('Moving ' + cardToString(move.movee) + ' to ' + cardToString(move.target));
+
+			clickCard(move.movee.selection);
+			clickCard(move.target.selection);
+
+			if (current_movee.selection.location == 'waste') {
+				// get that card out of the waste array and decrement waste_index
+				popFromWaste(waste_index);
+			}
+		}
+		else {
+			console.log('Skipping move, one or both cards already moved: (' + cardToString(move.movee) + ', ' + cardToString(move.target) + ')');
+		}
+
+	}
+
+	// Executes all moves in order of weight
 	function executeMoves(moves) {
 		// sort moves via priority and attempt them if still legal
 		function sortMoves(a, b) {
@@ -301,6 +385,14 @@ var bot = (function() {
 				console.log('Skipping move, one or both cards already moved: (' + cardToString(move.movee) + ', ' + cardToString(move.target) + ')');
 			}
 		});
+	}
+
+	function popFromWaste(index) {
+		waste_index--;
+		for (var i=index; i<waste.length; i++) {
+			waste[i].selection.index--;
+		}
+		waste.splice(index, 1);
 	}
 
 	function sameCard(c1, c2) {
