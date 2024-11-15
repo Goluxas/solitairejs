@@ -2,7 +2,7 @@
 	display: inline;
 	list-style-type: none;
 	margin: 0;
-	padding: 0p
+	padding: 0p;
 	float: left;
 }
 
@@ -49,7 +49,7 @@
 	float: left;
 	display: inline;
 	margin: 0 5px;
-	padding 3px 2px;
+	padding: 3px 2px;
 }
 
 .card {
@@ -59,4 +59,11 @@
 .card-selected {
 	border: 1px dashed red;
 	padding: 2px;
+}
+
+footer {
+	position: fixed;
+	bottom: 10px;
+	text-align: right;
+	width: 90%;
 }
